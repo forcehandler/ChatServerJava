@@ -13,49 +13,38 @@ public class Server
     // Vector to store active clients
     static Vector<ClientHandler> ar = new Vector<>();
      
-    // counter for clients
-    static int i = 0;
+    
  
     public static void main(String[] args) throws IOException 
     {
-        // server is listening on port 1234
+        
         ServerSocket ss = new ServerSocket(1234);
          
         Socket s;
          
-        // running infinite loop for getting
-        // client request
+        Scanner sc = new Scanner(System.in);
+        
         while (true) 
-        {
-            // Accept the incoming request
+        {           
             s = ss.accept();
  
             System.out.println("New client request received : " + s);
              
-            // obtain input and output streams
             DataInputStream dis = new DataInputStream(s.getInputStream());
             DataOutputStream dos = new DataOutputStream(s.getOutputStream());
+                        
+            ClientHandler mtch = new ClientHandler(s, dis, dos);
+ 
+            Thread t = new Thread(mtch);                    
              
-            System.out.println("Creating a new handler for this client...");
- 
-            // Create a new handler object for handling this request.
-            ClientHandler mtch = new ClientHandler(s,"client " + i, dis, dos);
- 
-            // Create a new Thread with this object.
-            Thread t = new Thread(mtch);
-             
-            System.out.println("Adding this client to active client list");
- 
-            // add this client to active clients list
             ar.add(mtch);
- 
-            // start the thread.
+            
             t.start();
  
-            // increment i for new client.
-            // i is used for naming only, and can be replaced
-            // by any naming scheme
-            i++;
+          	//String s = sc.nextLine();
+          	//if(s.equals("close")){
+          	//	break;
+          	//}
  
         }
     }
@@ -72,11 +61,11 @@ class ClientHandler implements Runnable
     boolean isloggedin;
      
     // constructor
-    public ClientHandler(Socket s, String name,
+    public ClientHandler(Socket s,
                             DataInputStream dis, DataOutputStream dos) {
         this.dis = dis;
         this.dos = dos;
-        this.name = name;
+        this.name = "anonymous";
         this.s = s;
         this.isloggedin=true;
     }
@@ -92,6 +81,8 @@ class ClientHandler implements Runnable
             		dos.writeUTF("Enter your preferred userId");
             		userId = dis.readUTF();
             		dos.writeUTF("Welcome " + userId);
+            		this.name = userId;
+            		System.out.println(userId + " connected");
  
  				}
  				catch(IOException e){
@@ -109,23 +100,28 @@ class ClientHandler implements Runnable
                  
                 if(received.equals("logout")){
                     this.isloggedin=false;
+                    for (ClientHandler mc : Server.ar) 
+                		{
+		                  if(mc.name != this.name && mc.isloggedin){
+		                  	mc.dos.writeUTF("\033[3m*user " + userId + " left the chat!\033[0m");
+		                  }
+                		}
                     this.s.close();
                     break;
                 }
                  
-                // break the string into message and recipient part
-                //StringTokenizer st = new StringTokenizer(received, "#");
+                
                 String MsgToSend = received;
-                //String recipient = st.nextToken();
- 
-                // search for the recipient in the connected devices list.
-                // ar is the vector storing client of active users
+                
+                System.out.println("<" + userId + "> " + MsgToSend);
+               
                 for (ClientHandler mc : Server.ar) 
                 {
                     if(mc.name != this.name && mc.isloggedin){
                     	mc.dos.writeUTF("<" + userId + "> " + MsgToSend);
                     }
                 }
+                this.dos.writeUTF("<me> " + MsgToSend);
             } catch (IOException e) {
                  
                 e.printStackTrace();

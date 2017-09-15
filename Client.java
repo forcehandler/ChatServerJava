@@ -30,18 +30,33 @@ public class Client
             public void run() {
                 while (true) {
  
+ 										try {
                     // read the message to deliver.
                     String msg = scn.nextLine();
+                    
                     
                     int count = 1; 
 										System.out.print(String.format("\033[%dA",count)); // Move up
 										System.out.print("\033[2K"); //Erase line content
                      
-                    try {
+                    
                         // write on the output stream
                         dos.writeUTF(msg);
+                        
+                        if(msg.equals("logout")){
+                    		
+                    			break;
+                    	}
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        
+                        try{
+								 						dis.close();
+														dos.close();
+														s.close();
+								 				}catch(Exception e1){
+								 					e1.printStackTrace();
+								 				}
+								 				break;
                     }
                 }
             }
@@ -59,8 +74,15 @@ public class Client
                         String msg = dis.readUTF();
                         System.out.println(msg);
                     } catch (IOException e) {
- 
-                        e.printStackTrace();
+                        
+                        try{
+								 						dis.close();
+														dos.close();
+														s.close();
+								 				}catch(Exception e1){
+								 					e1.printStackTrace();
+								 				}
+								 				break;
                     }
                 }
             }
@@ -69,5 +91,6 @@ public class Client
         sendMessage.start();
         readMessage.start();
  
+ 				
     }
 }
